@@ -1,0 +1,6 @@
+gpio	lights			.array=5		// GPIO for each DEFCON light from 1 to 5
+gpio	clicker						// GPIO for relay clicker
+gpio	beeper						// GPIO for beeper
+gpio	blinker						// GPIO for 1Hz blinker
+u8	defcon.blink	9				// Level below which the blinker is on
+s	topic		DEFCON				// The base topic

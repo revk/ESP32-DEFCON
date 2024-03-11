@@ -1,0 +1,17 @@
+*.o
+*~
+*.swp
+.DS_Store
+*/*.bin
+*.old
+*/*.old
+*/*/*.old
+*.pem
+build/*
+sdkconfig
+punch
+asr33
+asrtweet
+ASR33*.bin
+settings.h
+settings.c
