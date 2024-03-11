@@ -1,6 +1,7 @@
 *.o
 *~
 *.swp
+*.bin
 .DS_Store
 */*.bin
 *.old
