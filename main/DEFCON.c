@@ -245,7 +245,7 @@ app_main ()
          .max_leds = leds,      // LIGHTS, blinker, beeper, clicker, and status
          .led_pixel_format = LED_PIXEL_FORMAT_GRB,      // Pixel format of your LED strip
          .led_model = LED_MODEL_WS2812, // LED strip model
-         .flags.invert_out = blink[0].invert,
+         .flags.invert_out = rgb.invert,
       };
       led_strip_rmt_config_t rmt_config = {
          .clk_src = RMT_CLK_SRC_DEFAULT,        // different clock source can lead to different power consumption
