@@ -88,6 +88,10 @@ void
 defcon_task (void *arg)
 {
    int8_t level = -1;           // Current DEFCON level
+   for (int i = 0; i < LIGHTS; i++)
+      set_io (lights[i], 1 + i, 0);
+   set_io (clicker, 1 + LIGHTS, 0);
+   set_io (beeper, 2 + LIGHTS, 0);
    while (1)
    {
       usleep (10000);
@@ -158,10 +162,10 @@ blinker_task (void *arg)
    {
       set_io (blinker, 3 + LIGHTS, 0);
       revk_gpio_set (blinker, 0);
-      sleep(1);
+      sleep (1);
       if (defcon_level < defconblink)
          set_io (blinker, 3 + LIGHTS, 1);
-      sleep(1);
+      sleep (1);
    }
 }
 
@@ -228,10 +232,10 @@ app_main ()
    revk_start ();
 
    for (int i = 0; i < LIGHTS; i++)
-      revk_gpio_output (lights[i]);
-   revk_gpio_output (blinker);
-   revk_gpio_output (beeper);
-   revk_gpio_output (clicker);
+      revk_gpio_output (lights[i], 0);
+   revk_gpio_output (blinker, 0);
+   revk_gpio_output (beeper, 0);
+   revk_gpio_output (clicker, 0);
 
    if (rgb.set && leds)
    {
