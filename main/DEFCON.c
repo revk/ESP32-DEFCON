@@ -15,7 +15,10 @@ static const char __attribute__((unused)) TAG[] = "DEFCON";
 #include <driver/gpio.h>
 
 httpd_handle_t webserver = NULL;
+led_strip_handle_t strip = NULL;
 int8_t defcon_level = 9;
+
+#define	LIGHTS	(sizeof(lights)/sizeof(*lights))
 
 static void
 web_head (httpd_req_t * req, const char *title)
@@ -74,6 +77,14 @@ web_root (httpd_req_t * req)
 }
 
 void
+set_io (revk_gpio_t g, int led, int set)
+{                               // Set the GPIO and LED STRIP to a value
+   revk_gpio_set (g, set);
+   if (strip && led < leds)
+      revk_led (strip, led, 0xFF, revk_rgb (set ? 'G' : 'R'));
+}
+
+void
 defcon_task (void *arg)
 {
    int8_t level = -1;           // Current DEFCON level
@@ -81,41 +92,62 @@ defcon_task (void *arg)
    {
       usleep (10000);
       if (level != defcon_level)
-      {
+      {                         // Change
          usleep (100000);
          if (level != defcon_level)
-         {
-#if 0
-            uint8_t click = (1 << 6);
-            uint8_t blink = (1 << 7);
-            if (level >= 9 || defcon_level >= 9)
-               click = 0;
-            if (defcon_level >= defconblink)
-               blink = 0;
-#endif
+         {                      // Double check?
             int8_t waslevel = level;
             level = defcon_level;
-            // Off existing
-            // outputbits = (outputbits & ~0x7F) | click | blink;
-            // outputcount[7] = (blink ? -1 : 0);
-            usleep (500000);
             // Report
             jo_t j = jo_object_alloc ();
             jo_int (j, "level", level);
             revk_info ("defcon", &j);
-            // Beep count
-            // if (level < defcon && click) outputcount[0] = waslevel < level ? 1 : level ? 2 : 3;   // To/from level 9 is silent
-            // On new
-            // outputbits = (outputbits & ~0x7F) | (level > 5 ? 0 : level ? (1 << level) : (1 << 1)) | (outputcount[0] ? (1 << 0) : 0);
+            // Off existing
+            for (int i = 0; i < LIGHTS; i++)
+               set_io (lights[i], 1 + i, 0);
+            if (level < defconblink)
+               set_io (clicker, 1 + LIGHTS, 1);
             if (!level)
-               for (int i = 2; i <= 5; i++)
-               {
-                  usleep (100000);
-                  // outputbits = (outputbits ^ click) | (1 << i);
+            {                   // On all
+               for (int i = 0; i < LIGHTS; i++)
+               {                // All on
+                  usleep (200000);
+                  set_io (lights[i], 1 + i, 1);
+                  if (level < defconblink)
+                     set_io (clicker, 1 + LIGHTS, i & 1);
                }
+            } else
+            {                   // On new level
+               usleep (200000);
+               if (level <= LIGHTS)
+                  set_io (lights[level - 1], level, 1);
+               set_io (clicker, 1 + LIGHTS, 0);
+            }
+            // Beep count
+            int beeps = 0;
+            if (level < defconbeep)
+               beeps = waslevel < level ? 1 : level ? 2 : 3;
+            while (beeps--)
+            {
+               usleep (250000);
+               set_io (beeper, 2 + LIGHTS, 1);
+               usleep (250000);
+               set_io (beeper, 2 + LIGHTS, 0);
+            }
             sleep (1);
          }
       }
+   }
+}
+
+void
+led_task (void *arg)
+{
+   while (1)
+   {
+      revk_led (strip, 0, 255, revk_blinker ());
+      led_strip_refresh (strip);
+      usleep (100000);
    }
 }
 
@@ -124,11 +156,12 @@ blinker_task (void *arg)
 {
    while (1)
    {
+      set_io (blinker, 3 + LIGHTS, 0);
       revk_gpio_set (blinker, 0);
-      usleep (500000);
+      sleep(1);
       if (defcon_level < defconblink)
-         revk_gpio_set (blinker, 1);
-      usleep (500000);
+         set_io (blinker, 3 + LIGHTS, 1);
+      sleep(1);
    }
 }
 
@@ -194,12 +227,30 @@ app_main ()
    revk_boot (&app_callback);
    revk_start ();
 
-   for (int i = 0; i < 5; i++)
+   for (int i = 0; i < LIGHTS; i++)
       revk_gpio_output (lights[i]);
    revk_gpio_output (blinker);
    revk_gpio_output (beeper);
    revk_gpio_output (clicker);
 
+   if (rgb.set && leds)
+   {
+      led_strip_config_t strip_config = {
+         .strip_gpio_num = rgb.num,
+         .max_leds = leds,      // LIGHTS, blinker, beeper, clicker, and status
+         .led_pixel_format = LED_PIXEL_FORMAT_GRB,      // Pixel format of your LED strip
+         .led_model = LED_MODEL_WS2812, // LED strip model
+         .flags.invert_out = blink[0].invert,
+      };
+      led_strip_rmt_config_t rmt_config = {
+         .clk_src = RMT_CLK_SRC_DEFAULT,        // different clock source can lead to different power consumption
+         .resolution_hz = 10 * 1000 * 1000,     // 10MHz
+#ifdef  CONFIG_IDF_TARGET_ESP32S3
+         .flags.with_dma = true,
+#endif
+      };
+      REVK_ERR_CHECK (led_strip_new_rmt_device (&strip_config, &rmt_config, &strip));
+   }
    // Web interface
    httpd_config_t config = HTTPD_DEFAULT_CONFIG ();
    if (!httpd_start (&webserver, &config))
@@ -219,6 +270,8 @@ app_main ()
    revk_task ("defcon", defcon_task, NULL, 4);
    if (blinker.set)
       revk_task ("blinker", blinker_task, NULL, 4);
+   if (strip)
+      revk_task ("led", led_task, NULL, 4);
 
    while (1)
       sleep (1);

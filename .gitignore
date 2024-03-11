@@ -16,3 +16,5 @@ asrtweet
 ASR33*.bin
 settings.h
 settings.c
+managed_components
+dependencies.lock
