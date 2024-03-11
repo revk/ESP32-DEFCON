@@ -80,8 +80,9 @@ void
 set_io (revk_gpio_t g, int led, int set)
 {                               // Set the GPIO and LED STRIP to a value
    revk_gpio_set (g, set);
-   if (strip && led < leds)
-      revk_led (strip, led, 0xFF, revk_rgb (set ? 'G' : 'R'));
+   const char colour[] = "WROGBCMB";
+   if (strip && led && led < leds)
+      revk_led (strip, led, 0xFF, revk_rgb (set ? led < sizeof (colour) - 2 ? colour[led - 1] : 'G' : 'K'));
 }
 
 void
