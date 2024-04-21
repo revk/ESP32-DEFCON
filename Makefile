@@ -17,7 +17,7 @@ beta:
 	-git submodule update --recursive
 	-git commit -a -m checkpoint
 	@make set
-	cp DEFCON*.bin betarelease
+	cp $(PROJECT_NAME)*.bin betarelease
 	git commit -a -m Beta
 	git push
 
@@ -26,8 +26,8 @@ issue:
 	-git submodule update --recursive
 	-git commit -a -m checkpoint
 	@make set
-	cp DEFCON*.bin betarelease
-	cp DEFCON*.bin release
+	cp $(PROJECT_NAME)*.bin betarelease
+	cp $(PROJECT_NAME)*.bin release
 	git commit -a -m Release
 	git push
 
@@ -36,8 +36,6 @@ settings.h:     components/ESP32-RevK/revk_settings settings.def components/ESP3
 
 components/ESP32-RevK/revk_settings: components/ESP32-RevK/revk_settings.c
 	make -C components/ESP32-RevK
-
-tools:	DEFCON
 
 set:    wroom solo pico s3
 
