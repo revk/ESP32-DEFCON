@@ -204,16 +204,16 @@ app_callback (int client, const char *prefix, const char *target, const char *su
       if (len > sizeof (value))
          return "Too long";
    }
-   if (prefix && !strcmp (prefix, topic) && target && isdigit ((int) *target) && !target[1])
+   if (prefix && !strcmp (prefix, defcontopic) && target && isdigit ((int) *target) && !target[1])
       return setdefcon (*target - '0', value);
-   if (client || !prefix || target || strcmp (prefix, prefixcommand) || !suffix)
+   if (client || !prefix || target || strcmp (prefix, topiccommand) || !suffix)
       return NULL;              //Not for us or not a command from main MQTT
    if (isdigit ((int) *suffix) && !suffix[1])
       return setdefcon (*suffix - '0', value);
    if (!strcmp (suffix, "connect"))
    {
       char *t = NULL;
-      asprintf (&t, "%s/#", topic);
+      asprintf (&t, "%s/#", defcontopic);
       lwmqtt_subscribe (revk_mqtt (0), t);
       free (t);
    }
@@ -243,7 +243,7 @@ app_main ()
       led_strip_config_t strip_config = {
          .strip_gpio_num = rgb.num,
          .max_leds = leds,      // LIGHTS, blinker, beeper, clicker, and status
-         .led_pixel_format = LED_PIXEL_FORMAT_GRB,      // Pixel format of your LED strip
+         .color_component_format = LED_STRIP_COLOR_COMPONENT_FMT_GRB,
          .led_model = LED_MODEL_WS2812, // LED strip model
          .flags.invert_out = rgb.invert,
       };

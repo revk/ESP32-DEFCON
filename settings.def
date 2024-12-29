@@ -7,4 +7,4 @@ u8	leds		9				// How many LED strip LEDs (allow at least 9)
 u8	defcon.blink	10				// Level below which the blinker is on
 u8	defcon.click	6				// Level below which clicking is done
 u8	defcon.beep	5				// Level below which beeping is done
-s	topic		DEFCON				// The base topic
+s	defcon.topic		DEFCON				// The base topic
