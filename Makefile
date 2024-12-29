@@ -12,10 +12,10 @@ all:    settings.h
 	@cp build/$(PROJECT_NAME).bin $(PROJECT_NAME)$(SUFFIX).bin
 	@echo Done: $(PROJECT_NAME)$(SUFFIX).bin
 
-beta:
+beta:   
 	-git pull
 	-git submodule update --recursive
-	-git commit -a -m checkpoint
+	-git commit -a
 	@make set
 	cp $(PROJECT_NAME)*.bin betarelease
 	git commit -a -m Beta
@@ -24,7 +24,7 @@ beta:
 issue:
 	-git pull
 	-git submodule update --recursive
-	-git commit -a -m checkpoint
+	-git commit -a
 	@make set
 	cp $(PROJECT_NAME)*.bin betarelease
 	cp $(PROJECT_NAME)*.bin release
